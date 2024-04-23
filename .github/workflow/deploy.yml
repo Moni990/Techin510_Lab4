@@ -1,0 +1,56 @@
+name: Scheduled Python script with auto-push
+
+on:
+  schedule:
+    # Run at 3 AM UTC every day
+    - cron: '0 3 * * *'
+  push:
+    # Execute the workflow on every push to any branch in the repository
+    branches:
+      - main  # Specify the branch or branches, here it's set to 'main'
+
+
+jobs:
+  run-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Check out the repository code
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'  # Define which Python version to use
+      
+      # Step 3: Install any dependencies your script may need
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # If your script needs any dependencies, install them here
+          pip install -r requirements.txt
+
+      # Step 4: Run the Python script that generates files
+      - name: Run the script
+        run: python books.py  # Execute the script that generates new files
+
+      # Step 5: Configure git with your user information
+      - name: Configure git
+        run: |
+          git config --global user.email "monihuang@gmail.com"
+          git config --global user.name "Moni"
+
+      # Step 6: Commit new files to the repository
+      - name: Commit new files
+        run: |
+          git add .
+          git commit -m "Update"
+
+      # Step 7: Push the changes to GitHub
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main  # Ensure to use your repository's default branch name, which might be 'main' or 'master'
