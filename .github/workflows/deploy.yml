@@ -46,7 +46,7 @@ jobs:
       - name: Commit new files
         run: |
           git add .
-          git commit -m "Update"
+          git commit -m "Update" --allow-empty
 
       # Step 7: Push the changes to GitHub
       - name: Push changes
