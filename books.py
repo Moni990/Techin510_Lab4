@@ -1,23 +1,9 @@
-# This script installs necessary Python packages, parses HTML content from a URL, extracts specific data,
-# and writes the output to a JSON file.
-
-# Install necessary packages
-# !pip install requests
-# !pip install beautifulsoup4
-
 import requests
 from bs4 import BeautifulSoup
 import json
 
-# Define the URL from which to fetch the content
-URL = 'https://books.toscrape.com/catalogue/page-1.html'
-
-# Send a GET request to the URL
-res = requests.get(URL)
-res.encoding = 'utf-8'
-
-# Create a BeautifulSoup object to parse HTML
-soup = BeautifulSoup(res.text, 'html.parser') # Alternatively use 'lxml' as the parser
+# Base URL of the site, modifying this to format with different page numbers
+base_url = 'https://books.toscrape.com/catalogue/page-{}.html'
 
 # Prepare to store the extracted data
 books = []
@@ -31,19 +17,40 @@ book_rate = {
     'Five': 5,
 }
 
-# Select each book entry and extract relevant information
-list_items = soup.select('ol.row li')
-for item in list_items:
-    name = item.select('h3 a')[0].text.strip()
-    price = item.select('.price_color')[0].text.strip()
-    rate = item.select('.star-rating')[0]['class'][1]  # Extract the second class attribute for the rating
+# Loop through all 50 pages of the website
+for page_num in range(1, 6):
+    # Format the URL with the current page number
+    url = base_url.format(page_num)
 
-    books.append({'name': name, 'price': price, 'rate': book_rate[rate]})
+    # Send a GET request to the URL
+    res = requests.get(url)
+    res.encoding = 'utf-8'
 
-# Print extracted books data
-print(books)
+    # Check if the page was fetched successfully
+    if res.status_code != 200:
+        print(f"Failed to retrieve data from: {url}")
+        continue
+
+    # Create a BeautifulSoup object to parse HTML
+    soup = BeautifulSoup(res.text, 'html.parser')
+
+    # Select each book entry and extract relevant information
+    list_items = soup.select('ol.row li')
+    for item in list_items:
+        name = item.select('h3 a')[0]['title']
+        price = item.select('.price_color')[0].text.strip()
+        rate_class = item.select_one('.star-rating')['class'][1]  # Extract the second class attribute for the rating
+
+        books.append({
+            'name': name,
+            'price': price,
+            'rate': book_rate.get(rate_class, 0)  # Use get to avoid KeyError if the rating is not found
+        })
+
+# Print the number of books and some examples to verify
+print(f"Total books scraped: {len(books)}")
+print(books[:5])  # Show the first 5 books as a sample
 
 # Save the extracted data to a JSON file
-with open('data.json', 'w', encoding='utf-8') as file:
+with open('books_data.json', 'w', encoding='utf-8') as file:
     json.dump(books, file, ensure_ascii=False, indent=4)
-

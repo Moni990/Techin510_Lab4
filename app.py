@@ -3,7 +3,7 @@ import pandas as pd
 import json
 
 # Loading data from JSON
-with open('data.json', 'r', encoding='utf-8') as file:
+with open('books_data.json', 'r', encoding='utf-8') as file:
     data = json.load(file)
 
 df = pd.DataFrame(data)
